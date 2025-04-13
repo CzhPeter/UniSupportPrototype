@@ -1,0 +1,6 @@
+Flask==2.3.2
+langchain==0.0.142
+openai==0.27.0
+chromadb==0.3.21
+pypdf==3.8.1
+python-docx==0.8.11
