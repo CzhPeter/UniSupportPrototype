@@ -1,5 +1,10 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
 {% block content %}
-<h1>Welcome</h1>
+<div class="container mt-5 text-center">
+    <h1>We are caring for you</h1>
+    <div class="mt-4">
+        <a href="{{ url_for('questionnaire1') }}" class="btn btn-primary m-2">Start Questionnaire 1</a>
+        <a href="{{ url_for('questionnaire2') }}" class="btn btn-primary m-2">Start Questionnaire 2</a>
+    </div>
+</div>
 {% endblock %}

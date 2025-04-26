@@ -1,27 +1,20 @@
 from app import db
 from app.models import User
-import datetime
-
 
 def reset_db():
     db.drop_all()
     db.create_all()
 
-    users =[
-        {'username': 'amy',   'email': 'amy@b.com', 'role': 'Admin', 'pw': 'amy.pw'},
-        {'username': 'tom',   'email': 'tom@b.com',                  'pw': 'amy.pw'},
-        {'username': 'yin',   'email': 'yin@b.com', 'role': 'Admin', 'pw': 'amy.pw'},
-        {'username': 'tariq', 'email': 'trq@b.com',                  'pw': 'amy.pw'},
-        {'username': 'jo',    'email': 'jo@b.com',                   'pw': 'amy.pw'}
-    ]
+    u1 = User(username='amy', email='a@b.com', role='Admin')
+    u1.set_password('amy.pw')
+    u2 = User(username='tom', email='t@b.com')
+    u2.set_password('tom.pw')
+    u3 = User(username='yin', email='y@b.com', role='Admin')
+    u3.set_password('yin.pw')
+    u4 = User(username='tariq', email='tariq@b.com')
+    u4.set_password('tariq.pw')
+    u5 = User(username='jo', email='jo@b.com')
+    u5.set_password('jo.pw')
 
-    for u in users:
-        # get the password value and remove it from the dict:
-        pw = u.pop('pw')
-        # create a new user object using the parameters defined by the remaining entries in the dict:
-        user = User(**u)
-        # set the password for the user object:
-        user.set_password(pw)
-        # add the newly created user object to the database session:
-        db.session.add(user)
+    db.session.add_all([u1, u2, u3, u4, u5])
     db.session.commit()
