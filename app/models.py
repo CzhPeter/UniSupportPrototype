@@ -30,6 +30,14 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+# class Topic(db.Model):
+#     __tablename__ = 'topics'
+#
+#     id: so.Mapped[int] = so.mapped_column(primary_key=True)
+#     name: so.Mapped[str] = so.mapped_column(sa.String(128),index=True,unique=True)
+#     description: so.Mapped[str] = so.mapped_column(sa.String(256))
+
+
 @login.user_loader
 def load_user(id):
     return db.session.get(User, int(id))
