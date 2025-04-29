@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, flash, request, send_file, send_from_directory
 from app import app
-from app.models import User,AnswerRecord
+from app.models import User,AnswerRecord,Question
 from app.forms import ChooseForm, LoginForm, ChangePasswordForm, RegisterForm
 from flask_login import current_user, login_user, logout_user, login_required, fresh_login_required
 import sqlalchemy as sa
@@ -9,32 +9,6 @@ from urllib.parse import urlsplit
 import random
 import csv
 import io
-
-QUESTIONNAIRE1 = [
-    {"question": "Do you often feel tired?"},
-    {"question": "Do you frequently have trouble sleeping?"},
-    {"question": "Do you often feel sad or depressed?"},
-    {"question": "Do you feel anxious easily?"},
-    {"question": "Have you lost interest in activities you used to enjoy?"},
-    {"question": "Do you find it hard to concentrate?"},
-    {"question": "Do you feel overwhelmed by small matters?"},
-    {"question": "Do you experience frequent mood swings?"},
-    {"question": "Do you feel isolated even when around others?"},
-    {"question": "Do you often feel hopeless about the future?"}
-]
-
-QUESTIONNAIRE2 = [
-    {"question": "Do you often feel lonely?"},
-    {"question": "Do you feel that life has no meaning?"},
-    {"question": "Do you frequently feel helpless?"},
-    {"question": "Do you get angry easily over trivial matters?"},
-    {"question": "Do you find it difficult to enjoy your daily activities?"},
-    {"question": "Do you often experience a loss of appetite?"},
-    {"question": "Do you feel exhausted even after resting?"},
-    {"question": "Do you worry excessively about the future?"},
-    {"question": "Do you often feel worthless?"},
-    {"question": "Do you find it hard to make decisions?"}
-]
 
 def calculate_conclusion(score):
     if score <= 14:
@@ -53,9 +27,13 @@ def home():
 @app.route('/questionnaire1', methods=['GET', 'POST'])
 @login_required
 def questionnaire1():
+    questions = Question.query.filter_by(questionnaire_name='Questionnaire 1').order_by(Question.id).all()
+
     if request.method == 'POST':
-        score = sum(int(request.form.get(f'q{i}', 0)) for i in range(10))
+        score = sum(int(request.form.get(f'q{q.id}', 0)) for q in questions)
+
         conclusion = calculate_conclusion(score)
+
         record = AnswerRecord(
             user_id=current_user.id,
             questionnaire_name='Questionnaire 1',
@@ -64,14 +42,17 @@ def questionnaire1():
         )
         db.session.add(record)
         db.session.commit()
+
         return redirect(url_for('result', score=score, source='Questionnaire 1'))
-    return render_template('questionnaire.html', title="Psychological Survey 1", questions=QUESTIONNAIRE1, action_url=url_for('questionnaire1'))
+
+    return render_template('questionnaire.html', title="Psychological Survey 1", questions=questions, action_url=url_for('questionnaire1'))
 
 @app.route('/questionnaire2', methods=['GET', 'POST'])
 @login_required
 def questionnaire2():
+    questions = Question.query.filter_by(questionnaire_name='Questionnaire 2').order_by(Question.id).all()
     if request.method == 'POST':
-        score = sum(int(request.form.get(f'q{i}', 0)) for i in range(10))
+        score = sum(int(request.form.get(f'q{q.id}', 0)) for q in questions)
         conclusion = calculate_conclusion(score)
         record = AnswerRecord(
             user_id=current_user.id,
@@ -82,7 +63,7 @@ def questionnaire2():
         db.session.add(record)
         db.session.commit()
         return redirect(url_for('result', score=score, source='Questionnaire 2'))
-    return render_template('questionnaire.html', title="Psychological Survey 2", questions=QUESTIONNAIRE2, action_url=url_for('questionnaire2'))
+    return render_template('questionnaire.html', title="Psychological Survey 2", questions=questions, action_url=url_for('questionnaire2'))
 
 @app.route('/result')
 @login_required
@@ -119,6 +100,49 @@ def admin():
     q = db.select(User)
     user_lst = db.session.scalars(q)
     return render_template('admin.html', title="Admin", user_lst=user_lst, form=form)
+
+@app.route('/select_questionnaire')
+@login_required
+def select_questionnaire():
+    if current_user.role != 'Admin':
+        flash('Access denied.', 'danger')
+        return redirect(url_for('home'))
+    return render_template('select_questionnaire.html', title="Select Questionnaire")
+
+@app.route('/manage_questionnaire1', methods=['GET', 'POST'])
+@login_required
+def manage_questionnaire1():
+    if current_user.role != 'Admin':
+        flash('Access denied.', 'danger')
+        return redirect(url_for('home'))
+    questions = Question.query.filter_by(questionnaire_name='Questionnaire 1').order_by(Question.id).all()
+    if request.method == 'POST':
+        for q in questions:
+            new_content = request.form.get(f'q{q.id}')
+            if new_content:
+                q.content = new_content
+        db.session.commit()
+        flash('Questionnaire 1 updated successfully.', 'success')
+        return redirect(url_for('manage_questionnaire1'))
+    return render_template('manage_questionnaire.html', title="Manage Questionnaire 1", questions=questions, action_url=url_for('manage_questionnaire1'))
+
+
+@app.route('/manage_questionnaire2', methods=['GET', 'POST'])
+@login_required
+def manage_questionnaire2():
+    if current_user.role != 'Admin':
+        flash('Access denied.', 'danger')
+        return redirect(url_for('home'))
+    questions = Question.query.filter_by(questionnaire_name='Questionnaire 2').order_by(Question.id).all()
+    if request.method == 'POST':
+        for q in questions:
+            new_content = request.form.get(f'q{q.id}')
+            if new_content:
+                q.content = new_content
+        db.session.commit()
+        flash('Questionnaire 2 updated successfully.', 'success')
+        return redirect(url_for('manage_questionnaire2'))
+    return render_template('manage_questionnaire.html', title="Manage Questionnaire 2", questions=questions, action_url=url_for('manage_questionnaire2'))
 
 @app.route('/delete_user', methods=['POST'])
 def delete_user():

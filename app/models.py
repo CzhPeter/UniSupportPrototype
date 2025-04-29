@@ -47,4 +47,12 @@ class AnswerRecord(db.Model):
     timestamp: so.Mapped[datetime] = so.mapped_column(default=datetime.utcnow)
     user: so.Mapped["User"] = so.relationship(back_populates="records")
 
+@dataclass
+class Question(db.Model):
+    __tablename__ = 'questions'
+
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    questionnaire_name: so.Mapped[str] = so.mapped_column(sa.String(100), nullable=False)
+    content: so.Mapped[str] = so.mapped_column(sa.String(255), nullable=False)
+
 

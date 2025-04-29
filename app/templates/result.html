@@ -3,12 +3,10 @@
 <div class="container text-center mt-5">
     <div class="card shadow-lg p-4">
         <h2 class="mb-4">{{ source }} Result</h2>
-
         <div class="mb-4">
             <h1 class="display-3 fw-bold text-primary">{{ score }}</h1>
             <p class="text-muted">Total Score</p>
         </div>
-
         <div class="mb-4">
             {% if conclusion == "Mentally Healthy" %}
                 <span class="badge bg-success fs-4 p-3">{{ conclusion }}</span>
@@ -20,15 +18,12 @@
                 <span class="badge bg-danger fs-4 p-3">{{ conclusion }}</span>
             {% endif %}
         </div>
-
         <div class="text-center mt-4">
             <a href="{{ url_for('home') }}" class="btn btn-outline-primary btn-lg">Return to Home</a>
         </div>
     </div>
 </div>
-
 <style>
-/* 简单动画效果 */
 .card {
     animation: fadeIn 1s ease-in-out;
 }

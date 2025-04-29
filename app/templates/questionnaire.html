@@ -2,7 +2,6 @@
 {% block content %}
 <div class="container mt-5">
     <h2 class="mb-4">{{ title }}</h2>
-
     <div class="alert alert-info" role="alert">
         <p><strong>Instruction:</strong></p>
         <ul class="text-start">
@@ -12,28 +11,22 @@
             <li><strong>Always:</strong> Occurred about 5–7 times in the past week.</li>
         </ul>
     </div>
-
     <form method="post" action="{{ action_url }}">
         {% for q in questions %}
         <fieldset class="mb-4">
-            <legend>{{ loop.index }}. {{ q.question }}</legend>
-
+            <legend>{{ loop.index }}. {{ q.content }}</legend>
             <div class="btn-group d-flex" role="group">
                 <input type="radio" class="btn-check" name="q{{ loop.index0 }}" id="q{{ loop.index0 }}_1" value="1" required>
                 <label class="btn btn-outline-primary" for="q{{ loop.index0 }}_1">None/Seldom</label>
-
                 <input type="radio" class="btn-check" name="q{{ loop.index0 }}" id="q{{ loop.index0 }}_2" value="2">
                 <label class="btn btn-outline-primary" for="q{{ loop.index0 }}_2">Sometimes</label>
-
                 <input type="radio" class="btn-check" name="q{{ loop.index0 }}" id="q{{ loop.index0 }}_3" value="3">
                 <label class="btn btn-outline-primary" for="q{{ loop.index0 }}_3">Often</label>
-
                 <input type="radio" class="btn-check" name="q{{ loop.index0 }}" id="q{{ loop.index0 }}_4" value="4">
                 <label class="btn btn-outline-primary" for="q{{ loop.index0 }}_4">Always</label>
             </div>
         </fieldset>
         {% endfor %}
-
         <div class="text-center">
             <button type="submit" class="btn btn-success mt-3">Submit Questionnaire</button>
         </div>
