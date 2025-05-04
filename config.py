@@ -10,3 +10,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app', 'data', 'data.sqlite')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = True
+
+    GROQ_API_KEY = os.environ.get('GROQ_API_KEY') or "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"
+    LLM_MODEL_NAME = "llama3-70b-8192"
+    EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
