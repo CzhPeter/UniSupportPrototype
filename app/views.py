@@ -10,6 +10,7 @@ import random
 import csv
 import io
 
+
 def calculate_conclusion(score):
     if score <= 14:
         return "Mentally Healthy"
@@ -20,9 +21,11 @@ def calculate_conclusion(score):
     else:
         return "Severe Psychological Issues"
 
-@app.route("/")
-def home():
-    return render_template('home.html', title="Home")
+
+@app.route("/MentalHealthSurvey")
+def mental_health_survey():
+    return render_template('mental_health_survey.html', title="MentalHealthSurvey")
+
 
 @app.route('/questionnaire1', methods=['GET', 'POST'])
 @login_required
@@ -47,6 +50,7 @@ def questionnaire1():
 
     return render_template('questionnaire.html', title="Psychological Survey 1", questions=questions, action_url=url_for('questionnaire1'))
 
+
 @app.route('/questionnaire2', methods=['GET', 'POST'])
 @login_required
 def questionnaire2():
@@ -65,6 +69,7 @@ def questionnaire2():
         return redirect(url_for('result', score=score, source='Questionnaire 2'))
     return render_template('questionnaire.html', title="Psychological Survey 2", questions=questions, action_url=url_for('questionnaire2'))
 
+
 @app.route('/result')
 @login_required
 def result():
@@ -73,11 +78,13 @@ def result():
     conclusion = calculate_conclusion(score)
     return render_template('result.html', title="Assessment Result", score=score, conclusion=conclusion, source=source)
 
+
 @app.route('/account')
 @login_required
 def account():
     records = AnswerRecord.query.filter_by(user_id=current_user.id).order_by(AnswerRecord.timestamp.desc()).all()
     return render_template('account.html', title="Account", records=records)
+
 
 @app.route('/delete_record/<int:record_id>', methods=['POST'])
 @login_required
@@ -91,6 +98,7 @@ def delete_record(record_id):
     flash("Record deleted successfully.", "success")
     return redirect(url_for('account'))
 
+
 @app.route("/admin")
 @login_required
 def admin():
@@ -101,6 +109,7 @@ def admin():
     user_lst = db.session.scalars(q)
     return render_template('admin.html', title="Admin", user_lst=user_lst, form=form)
 
+
 @app.route('/select_questionnaire')
 @login_required
 def select_questionnaire():
@@ -108,6 +117,7 @@ def select_questionnaire():
         flash('Access denied.', 'danger')
         return redirect(url_for('home'))
     return render_template('select_questionnaire.html', title="Select Questionnaire")
+
 
 @app.route('/manage_questionnaire1', methods=['GET', 'POST'])
 @login_required
@@ -144,6 +154,7 @@ def manage_questionnaire2():
         return redirect(url_for('manage_questionnaire2'))
     return render_template('manage_questionnaire.html', title="Manage Questionnaire 2", questions=questions, action_url=url_for('manage_questionnaire2'))
 
+
 @app.route('/delete_user', methods=['POST'])
 def delete_user():
     form = ChooseForm()
@@ -162,6 +173,7 @@ def delete_user():
             db.session.delete(u)
             db.session.commit()
     return redirect(url_for('admin'))
+
 
 @app.route('/toggle_user_role', methods=['POST'])
 def toggle_user_role():
@@ -201,6 +213,7 @@ def login():
         return redirect(next_page)
     return render_template('generic_form.html', title='Sign In', form=form)
 
+
 @app.route('/change_pw', methods=['GET', 'POST'])
 @fresh_login_required
 def change_pw():
@@ -211,6 +224,7 @@ def change_pw():
         flash('Password changed successfully', 'success')
         return redirect(url_for('home'))
     return render_template('generic_form.html', title='Change Password', form=form)
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
