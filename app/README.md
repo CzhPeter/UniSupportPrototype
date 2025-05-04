@@ -1,2 +1,0 @@
-pip install -r requirements.txt
-export OPENAI_API_KEY="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"
