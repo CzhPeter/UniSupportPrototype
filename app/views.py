@@ -69,6 +69,17 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
+@app.route('/SmartLearningSystem')
+@login_required
+def smart_learning_system():
+    if current_user.is_authenticated:
+        if current_user.role == "Admin":
+            return redirect(url_for('upload'))
+        return redirect(url_for('chat'))
+    else:
+        flash("Please login first", "danger")
+    return redirect(url_for('home'))
+
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
