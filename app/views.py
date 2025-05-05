@@ -23,7 +23,6 @@ def home():
     return render_template('home.html', title="Home")
 
 
-
 def calculate_conclusion(score):
     if score <= 14:
         return "Mentally Healthy"
@@ -44,12 +43,9 @@ def mental_health_survey():
 @login_required
 def questionnaire1():
     questions = Question.query.filter_by(questionnaire_name='Questionnaire 1').order_by(Question.id).all()
-
     if request.method == 'POST':
         score = sum(int(request.form.get(f'q{q.id}', 0)) for q in questions)
-
         conclusion = calculate_conclusion(score)
-
         record = AnswerRecord(
             user_id=current_user.id,
             questionnaire_name='Questionnaire 1',
@@ -58,9 +54,7 @@ def questionnaire1():
         )
         db.session.add(record)
         db.session.commit()
-
         return redirect(url_for('result', score=score, source='Questionnaire 1'))
-
     return render_template('questionnaire.html', title="Psychological Survey 1", questions=questions, action_url=url_for('questionnaire1'))
 
 
@@ -239,47 +233,6 @@ def change_pw():
     return render_template('generic_form.html', title='Change Password', form=form)
 
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
-    form = RegisterForm()
-    if form.validate_on_submit():
-        new_user = User(username=form.username.data, email=form.email.data)
-        new_user.set_password(form.password.data)
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for('home'))
-    return render_template('generic_form.html', title='Register', form=form)
-
-
-
-@app.route('/change_pw', methods=['GET', 'POST'])
-@fresh_login_required
-def change_pw():
-    form = ChangePasswordForm()
-    if form.validate_on_submit():
-        current_user.set_password(form.new_password.data)
-        db.session.commit()
-        flash('Password changed successfully', 'success')
-        return redirect(url_for('home'))
-    return render_template('generic_form.html', title='Change Password', form=form)
-
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
-    form = RegisterForm()
-    if form.validate_on_submit():
-        new_user = User(username=form.username.data, email=form.email.data)
-        new_user.set_password(form.password.data)
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for('home'))
-    return render_template('generic_form.html', title='Register', form=form)
-
-
 @app.route('/logout')
 def logout():
     logout_user()
@@ -292,10 +245,7 @@ def register():
         return redirect(url_for('home'))
     form = RegisterForm()
     if form.validate_on_submit():
-        user = User(
-            username=form.username.data,
-            email=form.email.data  # 添加这行
-        )
+        user = User(username=form.username.data, email=form.email.data)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
