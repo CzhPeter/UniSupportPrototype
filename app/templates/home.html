@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="text-center mb-4">
+  <h1 class="display-5 fw-bold">UniSupport</h1>
+  <p class="lead text-muted">Welcome to UniSupport</p>
+  {% if current_user.is_authenticated %}
+  <p>Hello, <strong>{{ current_user.username }}</strong>！<a href="{{ url_for('logout') }}">log out</a></p>
+  {% else %}
+    <div class="d-flex flex-column flex-sm-row justify-content-center align-items-center gap-3 mb-4">
+      <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-glow">
+        <i class="fa-solid fa-right-to-bracket me-2"></i> log in
+      </a>
+      <a href="{{ url_for('register') }}" class="btn btn-outline-success btn-glow">
+        <i class="fa-solid fa-user-plus me-2"></i> register
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+<div class="row justify-content-center g-4 fade-in">
+  <div class="col-12 col-md-4 mb-4">
+    <div class="card shadow-lg h-100 card-hover text-center">
+      <img src="{{ url_for('static', filename='images/1.png') }}" class="card-img-top" alt="AI Mental Chat">
+      <div class="card-body">
+        <h3 class="card-title"><i class="fa-solid fa-graduation-cap"></i> Smart Learning System</h3>
+        <p class="card-text"> Explore intelligent learning with adaptive AI support.</p>
+        <a href="/SmartLearningSystem" class="btn btn-success"><i class="fa-solid fa-paper-plane"></i> Enter</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4 mb-4">
+    <div class="card shadow-lg h-100 card-hover text-center">
+      <img src="{{ url_for('static', filename='images/2.jpg') }}" class="card-img-top" alt="Mental Health Survey">
+      <div class="card-body">
+        <h3 class="card-title"><i class="fa-solid fa-clipboard-list"></i> Mental Health Survey</h3>
+        <p class="card-text">Take a moment to reflect on your mental health through a simple questionnaire.</p>
+        <a href="/MentalHealthSurvey" class="btn btn-success"><i class="fa-solid fa-paper-plane"></i> Enter</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4 mb-4">
+    <div class="card shadow-lg h-100 card-hover text-center">
+      <img src="{{ url_for('static', filename='images/3.jpg') }}" class="card-img-top" alt="Social System">
+      <div class="card-body">
+        <h3 class="card-title"><i class="fa-solid fa-users"></i> Social System</h3>
+        <p class="card-text"> Build meaningful connections and share moments from your student life.</p>
+        <a href="/SocialSystem" class="btn btn-success"><i class="fa-solid fa-paper-plane"></i> Enter</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
