@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% import "bootstrap_wtf.html" as wtf %}
+
+{% block content %}
+    <head>
+        <title>Upload files</title>
+    </head>
+    <body>
+        <h1>Select your file to add into the knowledge base</h1>
+        <form method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            {{ form.file.label }}<br>
+            {{ form.file() }}<br><br>
+            {{ form.submit() }}
+        </form>
+        {% if message %}
+            <p style="color:green">{{ message }}</p>
+        {% endif %}
+    </body>
+{% endblock %}

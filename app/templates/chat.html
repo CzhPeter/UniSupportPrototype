@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "bootstrap_wtf.html" as wtf %}
+
+{% block content %}
+    <head>
+        <meta charset="UTF-8">
+        <title>Smart learning AI Chatbot</title>
+    </head>
+    <body>
+        <h1>Smart learning AI Chatbot</h1>
+        <form method="POST">
+            <label for="question">Please enter your question：</label><br>
+            <input type="text" id="question" name="question" style="width: 400px;" required>
+            <button type="submit">Send</button>
+        </form>
+
+        {% if question and answer %}
+            <div style="margin-top:20px; padding: 10px; border: 1px solid #ccc;">
+                <p><strong>question：</strong> {{ question }}</p>
+                <p><strong>AI answer：</strong> {{ answer }}</p>
+            </div>
+        {% endif %}
+    </body>
+{% endblock %}
