@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Social System{% endblock %}
+
+{% block content %}
+
+    <div class="container py-5">
+
+    {% set n = current_user.received_notifications | length %}
+    {% if n > 0 %}
+      <div class="alert alert-info d-flex align-items-center justify-content-between" role="alert">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-bell fa-2x me-3"></i>
+          <div>
+            <h4 class="alert-heading mb-1">You’ve got mail!</h4>
+            <p class="mb-0">You have received <strong>{{ n }}</strong> new notification{{ 's' if n > 1 }}.</p>
+          </div>
+        </div>
+        {# NEW: 查看所有通知 按钮入口 #}
+        <a href="{{ url_for('notifications') }}" class="btn btn-outline-dark">
+          View All Notifications
+        </a>
+      </div>
+    {% else %}
+      <div class="alert alert-secondary d-flex align-items-center justify-content-between" role="alert">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-bell-slash fa-lg me-2"></i>
+          You have no new notifications.
+        </div>
+        {# ====== NEW: 即使无新通知，也提供入口查看历史 ====== #}
+        <a href="{{ url_for('notifications') }}" class="btn btn-outline-secondary">
+          View Notifications
+        </a>
+      </div>
+    {% endif %}
+
+    <h2 class="mb-3">Recommended Topic</h2>
+    <div class="row g-4">
+      {% for topic in topics %}
+          {% set subscribed = topic in current_user.subscriptions %}
+          {% set is_host = topic in current_user.posting_topics %}
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm">
+            {# 如果是主持人，则显示右上角徽章 #}
+            {% if is_host %}
+              <span class="badge bg-primary position-absolute" style="top: 0.5rem; right: 0.5rem;">
+                Host
+              </span>
+            {% endif %}
+            {# 如果有每个 topic 对应的图标或封面图 #}
+{#            <img src="{{ topic.image_url or url_for('static', filename='default_topic.png') }}"#}
+{#                 class="card-img-top" alt="{{ topic.name }}">#}
+
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                 <a href="{{ url_for('topic_detail', topic_id=topic.id) }}"
+                  class="btn btn-link p-0 align-baseline">
+                   {{ topic.name }}
+                 </a>
+                </h5>
+              <p class="card-text">
+                {{ topic.subscribers | length }} people following
+              </p>
+              <div class="mt-auto">
+                {% if subscribed %}
+                  <a href="{{ url_for('unsubscribe', topic_id=topic.id) }}"
+                     class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-check-circle"></i> Subscribed
+                  </a>
+                {% else %}
+                  <a href="{{ url_for('subscribe', topic_id=topic.id) }}"
+                     class="btn btn-success w-100">
+                    <i class="fas fa-paper-plane"></i> Subscribe
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <hr class="my-5">
+
+    {#  创建新 Topic 的折叠面板入口  #}
+    <div class="mb-4 text-center">
+      <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#newTopicForm"
+              aria-expanded="false" aria-controls="newTopicForm">
+        <i class="fas fa-plus"></i> New Topic
+      </button>
+    </div>
+
+    <div class="collapse" id="newTopicForm">
+      <div class="card card-body shadow-sm">
+        <form method="post" action="{{ url_for('social_system') }}">
+          {{ form.hidden_tag() }}
+          <div class="mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control", placeholder="Enter topic name") }}
+            {% if form.name.errors %}
+              <div class="text-danger small">
+                {{ form.name.errors[0] }}
+              </div>
+            {% endif %}
+          </div>
+          <div class="mb-3">
+            {{ form.description.label(class="form-label") }}
+            {{ form.description(class="form-control", rows="3", placeholder="Optional description") }}
+            {% if form.description.errors %}
+              <div class="text-danger small">
+                {{ form.description.errors[0] }}
+              </div>
+            {% endif %}
+          </div>
+          <div class="text-end">
+            {{ form.submit(class="btn btn-primary") }}
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+{% endblock %}

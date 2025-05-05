@@ -311,6 +311,65 @@ def chat():
             answer = llm([HumanMessage(content=final_prompt)]).content
     return render_template('chat.html', title='Smart Learning AI Chatbot', question=question, answer=answer)
 
+from app.forms import TopicForm
+
+@app.route("/SocialSystem",methods=['GET', 'POST'])
+def social_system():
+
+    form = TopicForm()
+    if form.validate_on_submit():
+        # 如果提交合法，创建新 Topic 并刷新页面
+        new_topic = Topic(name=form.name.data, description=form.description.data)
+        # 默认创建者也成为 posters（host）和订阅者
+        new_topic.add_poster(current_user)
+        new_topic.add_subscriber(current_user)
+        db.session.add(new_topic)
+        db.session.commit()
+        flash(f'Topic "{new_topic.name}" created successfully!', 'success')
+        return redirect(url_for('social_system'))
+
+    all_topics = Topic.query.all()
+    # 分离 host 和 非 host
+    host_topics = [t for t in all_topics if t in current_user.posting_topics]
+    other_topics = [t for t in all_topics if t not in current_user.posting_topics]
+    # 合并，使 host topics 在前
+    topics = host_topics + other_topics
+    return render_template("socialSystem/social_system.html",topics = topics,form=form )
+
+@app.route('/subscribe/<int:topic_id>')
+@login_required
+def subscribe(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    topic.add_subscriber(current_user)
+    db.session.commit()
+    flash(f'You have subscribed to "{topic.name}".', 'success')
+    return redirect(url_for('social_system'))
+
+@app.route('/unsubscribe/<int:topic_id>')
+@login_required
+def unsubscribe(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    if topic in current_user.subscriptions:
+        topic.remove_subscriber(current_user)
+        db.session.commit()
+        flash(f'Unsubscribed from "{topic.name}".', 'warning')
+    return redirect(url_for('social_system'))
+
+@app.route('/topic/<int:topic_id>')
+@login_required
+def topic_detail(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    # 渲染详情页模板
+    return render_template('socialSystem/topic_detail.html', topic=topic)
+
+
+@app.route('/notifications')
+@login_required
+def notifications():
+    # 获取并展示 current_user.received_notifications
+    return render_template('socialSystem/notifications.html', notifications=current_user.received_notifications)
+
+
 
 from flask import jsonify
 from app.debug_utils import reset_db
