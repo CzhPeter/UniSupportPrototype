@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5 text-center">
+    <h2 class="mb-4">Select a Questionnaire to Edit</h2>
+    <div class="mt-4">
+        <a href="{{ url_for('manage_questionnaire1') }}" class="btn btn-outline-primary btn-lg m-3">Manage Questionnaire 1</a>
+        <a href="{{ url_for('manage_questionnaire2') }}" class="btn btn-outline-primary btn-lg m-3">Manage Questionnaire 2</a>
+    </div>
+</div>
+{% endblock %}

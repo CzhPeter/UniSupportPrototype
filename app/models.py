@@ -3,37 +3,14 @@ import sqlalchemy as sa
 import sqlalchemy.orm as so
 from flask_login import UserMixin
 from sqlalchemy import ForeignKey
+from sqlalchemy.testing.schema import mapped_column
 from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db, login
 from dataclasses import dataclass
 from datetime import datetime
 
-# Association table for users subscribing to topics
-topic_subscribers = sa.Table(
-    'topic_subscribers',
-    db.metadata,
-    sa.Column('user_id', sa.Integer, sa.ForeignKey('users.id'), primary_key=True),
-    sa.Column('topic_id', sa.Integer, sa.ForeignKey('topics.id'), primary_key=True),
-)
-
-# Association table for users allowed to post in topics
-topic_posters = sa.Table(
-    'topic_posters',
-    db.metadata,
-    sa.Column('user_id', sa.Integer, sa.ForeignKey('users.id'), primary_key=True),
-    sa.Column('topic_id', sa.Integer, sa.ForeignKey('topics.id'), primary_key=True),
-)
-
-# Association table for notification recipients
-notification_recipients = sa.Table(
-    'notification_recipients',
-    db.metadata,
-    sa.Column('notification_id', sa.Integer, sa.ForeignKey('notifications.id'), primary_key=True),
-    sa.Column('user_id', sa.Integer, sa.ForeignKey('users.id'), primary_key=True),
-)
-
-
+@dataclass
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
 
@@ -42,6 +19,7 @@ class User(UserMixin, db.Model):
     email: so.Mapped[str] = so.mapped_column(sa.String(120), index=True, unique=True)
     password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
     role: so.Mapped[str] = so.mapped_column(sa.String(10), default="Normal")
+    records: so.Mapped[list["AnswerRecord"]] = so.relationship(back_populates="user", cascade="all, delete-orphan")
 
     # Topics this user is subscribed to
     subscriptions: so.Mapped[List['Topic']] = so.relationship(
@@ -72,9 +50,8 @@ class User(UserMixin, db.Model):
     )
 
     def __repr__(self):
-        pwh = 'None' if not self.password_hash else f'…{self.password_hash[-5:]}'
-        return (f'User(id={self.id}, username={self.username}, '
-                f'email={self.email}, role={self.role}, pwh={pwh})')
+        pwh= 'None' if not self.password_hash else f'...{self.password_hash[-5:]}'
+        return f'User(id={self.id}, username={self.username}, email={self.email}, role={self.role}, pwh={pwh})'
 
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
@@ -174,3 +151,25 @@ class Notification(db.Model):
 @login.user_loader
 def load_user(id):
     return db.session.get(User, int(id))
+
+@dataclass
+class AnswerRecord(db.Model):
+    __tablename__ = 'answer_records'
+
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('users.id'), nullable=False)
+    questionnaire_name: so.Mapped[str] = so.mapped_column(sa.String(100), nullable=False)
+    score: so.Mapped[int] = so.mapped_column(nullable=False)
+    conclusion: so.Mapped[str] = so.mapped_column(sa.String(100), nullable=False)
+    timestamp: so.Mapped[datetime] = so.mapped_column(default=datetime.utcnow)
+    user: so.Mapped["User"] = so.relationship(back_populates="records")
+
+@dataclass
+class Question(db.Model):
+    __tablename__ = 'questions'
+
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    questionnaire_name: so.Mapped[str] = so.mapped_column(sa.String(100), nullable=False)
+    content: so.Mapped[str] = so.mapped_column(sa.String(255), nullable=False)
+
+
