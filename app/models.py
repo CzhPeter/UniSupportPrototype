@@ -10,6 +10,30 @@ from app import db, login
 from dataclasses import dataclass
 from datetime import datetime
 
+# Association table for users subscribing to topics
+topic_subscribers = sa.Table(
+    'topic_subscribers',
+    db.metadata,
+    sa.Column('user_id', sa.Integer, sa.ForeignKey('users.id'), primary_key=True),
+    sa.Column('topic_id', sa.Integer, sa.ForeignKey('topics.id'), primary_key=True),
+)
+
+# Association table for users allowed to post in topics
+topic_posters = sa.Table(
+    'topic_posters',
+    db.metadata,
+    sa.Column('user_id', sa.Integer, sa.ForeignKey('users.id'), primary_key=True),
+    sa.Column('topic_id', sa.Integer, sa.ForeignKey('topics.id'), primary_key=True),
+)
+
+# Association table for notification recipients
+notification_recipients = sa.Table(
+    'notification_recipients',
+    db.metadata,
+    sa.Column('notification_id', sa.Integer, sa.ForeignKey('notifications.id'), primary_key=True),
+    sa.Column('user_id', sa.Integer, sa.ForeignKey('users.id'), primary_key=True),
+)
+
 @dataclass
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
