@@ -315,7 +315,6 @@ from app.forms import TopicForm
 
 @app.route("/SocialSystem",methods=['GET', 'POST'])
 def social_system():
-
     form = TopicForm()
     if form.validate_on_submit():
         # 如果提交合法，创建新 Topic 并刷新页面
@@ -355,12 +354,50 @@ def unsubscribe(topic_id):
         flash(f'Unsubscribed from "{topic.name}".', 'warning')
     return redirect(url_for('social_system'))
 
-@app.route('/topic/<int:topic_id>')
+from app.forms import NotificationForm
+
+@app.route('/topic/<int:topic_id>', methods=['GET', 'POST'])
 @login_required
 def topic_detail(topic_id):
     topic = Topic.query.get_or_404(topic_id)
-    # 渲染详情页模板
-    return render_template('socialSystem/topic_detail.html', topic=topic)
+    # 判断当前用户是否为该 topic 的 Host
+    is_host = current_user in topic.posters
+
+    # 如果是 Host，则实例化发布通知的表单并处理提交
+    form = NotificationForm() if is_host else None
+    if is_host and form.validate_on_submit():
+        # 通过models.py里的方法创建并分发通知
+        try:
+            topic.post_notification(poster=current_user, content=form.content.data)
+            flash('Notification posted to all subscribers.', 'success')
+        except PermissionError as e:
+            flash(str(e), 'danger')
+        return redirect(url_for('topic_detail', topic_id=topic.id))
+
+    # 对所有用户都显示已有的 notifications（最新在前）
+    notifications = Notification.query.filter_by(topic_id=topic.id).order_by(Notification.date.desc()).all()
+
+    return render_template(
+        'socialSystem/topic_detail.html',
+        topic=topic,
+        notifications=notifications,
+        is_host=is_host,
+        form=form
+    )
+
+@app.route('/topic/<int:topic_id>/delete', methods=['POST'])
+@login_required
+def delete_topic(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    # 仅允许 Host 删除
+    if current_user not in topic.posters:
+        flash('You do not have permission to delete this topic.', 'danger')
+        return redirect(url_for('topic_detail', topic_id=topic_id))
+
+    db.session.delete(topic)
+    db.session.commit()
+    flash(f'Topic "{topic.name}" has been deleted.', 'warning')
+    return redirect(url_for('social_system'))
 
 
 @app.route('/notifications')

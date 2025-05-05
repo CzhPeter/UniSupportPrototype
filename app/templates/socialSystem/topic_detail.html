@@ -1,6 +1,66 @@
 {% extends "base.html" %}
-{% block title %}TOPIC DETAIL{% endblock %}
+{% block title %}Topic: {{ topic.name }}{% endblock %}
 
 {% block content %}
+  <div class="container py-5">
+    <h1 class="mb-4">
+      {{ topic.name }}
+      {% if is_host %}
+        <span class="badge bg-primary ms-2">Host</span>
+      {% endif %}
+    </h1>
 
+    <h2 class="h5 mb-3">Description</h2>
+    <p class="mb-4">{{ topic.description or 'No description provided.' }}</p>
+
+    <h2 class="h5 mb-3">Notifications</h2>
+    {% if notifications %}
+      <ul class="list-group mb-4">
+        {% for notif in notifications %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>{{ notif.poster.username }}</strong>
+                <small class="text-muted">on {{ notif.date.strftime('%Y-%m-%d %H:%M') }}</small>
+              </div>
+            </div>
+            <p class="mt-2 mb-0">{{ notif.content }}</p>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted mb-4">No notifications yet.</p>
+    {% endif %}
+
+    {% if is_host %}
+      {# ====== NEW: 发布新通知表单（保持） ====== #}
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Post a new notification</h5>
+          <form method="post" action="{{ url_for('topic_detail', topic_id=topic.id) }}">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+              {{ form.content(class="form-control", rows="4", placeholder="Enter notification content") }}
+              {% if form.content.errors %}
+                <div class="text-danger small">{{ form.content.errors[0] }}</div>
+              {% endif %}
+            </div>
+            <div class="text-end">
+              {{ form.submit(class="btn btn-primary") }}
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {# ====== NEW: 删除 Topic 按钮，附带确认对话框 ====== #}
+      <form method="post" action="{{ url_for('delete_topic', topic_id=topic.id) }}"
+            onsubmit="return confirm('Are you sure you want to delete this topic? This action cannot be undone.');">
+        <button type="submit" class="btn btn-outline-danger">
+          <i class="fas fa-trash-alt"></i> Delete Topic
+        </button>
+      </form>
+    {% endif %}
+
+    <a href="{{ url_for('social_system') }}" class="btn btn-link mt-4">&larr; Back to Topics</a>
+  </div>
 {% endblock %}

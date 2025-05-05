@@ -83,3 +83,7 @@ class TopicForm(FlaskForm):
         q = db.select(Topic).where(Topic.name == field.data)
         if db.session.scalar(q):
             raise ValidationError("Topic name already exists. Please choose another.")
+
+class NotificationForm(FlaskForm):
+    content = TextAreaField('Content', validators=[DataRequired(), Length(max=1024)])
+    submit = SubmitField('Post Notification')
