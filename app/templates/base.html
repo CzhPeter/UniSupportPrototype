@@ -67,9 +67,17 @@
           <a class="nav-link" href="{{ url_for('account') }}">Account</a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" aria-current="page" href="{{ url_for('change_pw') }}">Change Password</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" href="{{ url_for('logout') }}">Logout {{ current_user.username }}</a>
         </li>
       </ul>
+      {% endif %}
+      {% if current_user.is_authenticated and current_user.role == "Admin" %}
+        <li class="nav-item">
+          <a class="nav-link" aria-current="page" href="{{ url_for('admin') }}">Admin</a>
+        </li>
       {% endif %}
     </div>
   </nav>
