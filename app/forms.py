@@ -8,6 +8,7 @@ from flask_wtf.file import FileAllowed
 from app import db
 from app.models import User
 
+
 class ChooseForm(FlaskForm):
     choice = HiddenField('Choice')
 
