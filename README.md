@@ -22,8 +22,11 @@ Follow these steps to get the project up and running:
     ```bash
     export GROQ_API_KEY=your_api_key_here
     ```
-4. **Run the Flask server**  
+4. **Initialize Databases and Run the Flask server**  
     ```bash
+    flask shell
+    reset_db()
+    quit()
     flask run
     ```
 5. **Open the project in your browser**  
