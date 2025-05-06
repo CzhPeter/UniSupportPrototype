@@ -71,3 +71,19 @@ class UploadForm(FlaskForm):
         FileAllowed(['txt', 'docx', 'pdf'], 'Allow .txt/.docx/.pdf files')
     ])
     submit = SubmitField('Upload')
+
+class TopicForm(FlaskForm):
+    name = StringField('Topic Name', validators=[DataRequired(), Length(max=128)])
+    description = TextAreaField('Description', validators=[Optional(), Length(max=256)])
+    submit = SubmitField('Create Topic')
+
+    def validate_name(form, field):
+        # Check if a topic with the same name already exists
+        from app.models import Topic
+        q = db.select(Topic).where(Topic.name == field.data)
+        if db.session.scalar(q):
+            raise ValidationError("Topic name already exists. Please choose another.")
+
+class NotificationForm(FlaskForm):
+    content = TextAreaField('Content', validators=[DataRequired(), Length(max=1024)])
+    submit = SubmitField('Post Notification')

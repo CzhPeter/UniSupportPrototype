@@ -7,11 +7,13 @@ from flask import render_template, redirect, url_for, flash, request, send_file,
 from werkzeug.utils import secure_filename
 from app import app
 from app.docs_ingest import process_and_insert_into_store
-from app.models import User,AnswerRecord,Question
+from app.models import User,AnswerRecord,Question, Topic, Notification, NotificationRecipient
 from app.forms import ChooseForm, LoginForm, RegisterForm, UploadForm, ChangePasswordForm, RegisterForm
 from flask_login import current_user, login_user, logout_user, login_required, fresh_login_required
 import sqlalchemy as sa
 from app import db
+from app.forms import NotificationForm
+from app.forms import TopicForm
 from urllib.parse import urlsplit
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
@@ -254,6 +256,7 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
+# Smart Learning System
 @app.route('/SmartLearningSystem')
 @login_required
 def smart_learning_system():
@@ -310,6 +313,137 @@ def chat():
             final_prompt = PROMPT.format(context=context_text, question=question)
             answer = llm([HumanMessage(content=final_prompt)]).content
     return render_template('chat.html', title='Smart Learning AI Chatbot', question=question, answer=answer)
+
+
+# Social System
+@app.route("/SocialSystem",methods=['GET', 'POST'])
+def social_system():
+    form = TopicForm()
+    if form.validate_on_submit():
+        # If the submission is valid, create a new Topic and refresh the page
+        new_topic = Topic(name=form.name.data, description=form.description.data)
+        # By default, the creator also becomes a poster (host) and a subscriber
+        new_topic.add_poster(current_user)
+        new_topic.add_subscriber(current_user)
+        db.session.add(new_topic)
+        db.session.commit()
+        flash(f'Topic "{new_topic.name}" created successfully!', 'success')
+        return redirect(url_for('social_system'))
+
+    all_topics = Topic.query.all()
+    # Separate hosts and non-hosts
+    host_topics = [t for t in all_topics if t in current_user.posting_topics]
+    other_topics = [t for t in all_topics if t not in current_user.posting_topics]
+    # Merge so that host topics appear first
+    topics = host_topics + other_topics
+    return render_template("socialSystem/social_system.html",topics = topics,form=form )
+
+
+@app.route('/subscribe/<int:topic_id>')
+@login_required
+def subscribe(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    topic.add_subscriber(current_user)
+    db.session.commit()
+    flash(f'You have subscribed to "{topic.name}".', 'success')
+    return redirect(url_for('social_system'))
+
+
+@app.route('/unsubscribe/<int:topic_id>')
+@login_required
+def unsubscribe(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    if topic in current_user.subscriptions:
+        topic.remove_subscriber(current_user)
+        db.session.commit()
+        flash(f'Unsubscribed from "{topic.name}".', 'warning')
+    return redirect(url_for('social_system'))
+
+
+@app.route('/topic/<int:topic_id>', methods=['GET', 'POST'])
+@login_required
+def topic_detail(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    # Determine whether the current user is a Host for the given topic
+    is_host = current_user in topic.posters
+
+    # If the user is a Host, instantiate the notification publishing form and handle its submission
+    form = NotificationForm() if is_host else None
+    if is_host and form.validate_on_submit():
+        # Create and dispatch notifications using the method defined in models.py
+        try:
+            topic.post_notification(poster=current_user, content=form.content.data)
+            flash('Notification posted to all subscribers.', 'success')
+        except PermissionError as e:
+            flash(str(e), 'danger')
+        return redirect(url_for('topic_detail', topic_id=topic.id))
+
+    # Retrieve all NotificationRecipient links for the current user under the given topic, ordered by time in descending order
+    recips = (NotificationRecipient.query.join(Notification)
+              .filter(Notification.topic_id == topic.id, NotificationRecipient.user_id == current_user.id)
+              .order_by(Notification.date.desc()).all())
+
+    return render_template(
+        'socialSystem/topic_detail.html',
+        topic=topic,
+        is_host=is_host,
+        form=form,
+        recips = recips
+    )
+
+
+@app.route('/topic/<int:topic_id>/mark_read/<int:notification_id>', methods=['POST'])
+@login_required
+def mark_read(topic_id, notification_id):
+    link = NotificationRecipient.query.filter_by(
+        notification_id=notification_id,
+        user_id=current_user.id
+    ).first_or_404()
+    link.is_read = True
+    db.session.commit()
+    return redirect(url_for('topic_detail', topic_id=topic_id))
+
+
+@app.route('/topic/<int:topic_id>/delete', methods=['POST'])
+@login_required
+def delete_topic(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    # Allow deletion only by Hosts
+    if current_user not in topic.posters:
+        flash('You do not have permission to delete this topic.', 'danger')
+        return redirect(url_for('topic_detail', topic_id=topic_id))
+
+    db.session.delete(topic)
+    db.session.commit()
+    flash(f'Topic "{topic.name}" has been deleted.', 'warning')
+    return redirect(url_for('social_system'))
+
+
+from collections import defaultdict
+@app.route('/notifications')
+@login_required
+def notifications():
+    # Retrieve all NotificationRecipient records for the current user
+
+    recips = (NotificationRecipient.query
+              .join(NotificationRecipient.notification)
+              .filter(NotificationRecipient.user_id == current_user.id)
+              .order_by(Notification.date.desc())
+              .all())
+
+    # Group by topic
+    grouped: dict[Topic, list[NotificationRecipient]] = defaultdict(list)
+    for link in recips:
+        grouped[link.notification.topic].append(link)
+
+    # Within each group, sort first by is_read, then by date
+    for topic, links in grouped.items():
+        links.sort(key=lambda l: (l.is_read, -l.notification.date.timestamp()))
+
+    return render_template(
+        'socialSystem/notifications.html',
+        grouped_notifications=grouped
+    )
 
 
 # Error handlers
