@@ -5,7 +5,7 @@
 
     <div class="container py-5">
 
-    {% set n = current_user.received_notifications | length %}
+    {% set n = current_user.unread_count %}
     {% if n > 0 %}
       <div class="alert alert-info d-flex align-items-center justify-content-between" role="alert">
         <div class="d-flex align-items-center">
@@ -15,7 +15,7 @@
             <p class="mb-0">You have received <strong>{{ n }}</strong> new notification{{ 's' if n > 1 }}.</p>
           </div>
         </div>
-        {# NEW: 查看所有通知 按钮入口 #}
+        {# 查看所有通知 按钮入口 #}
         <a href="{{ url_for('notifications') }}" class="btn btn-outline-dark">
           View All Notifications
         </a>
@@ -26,7 +26,7 @@
           <i class="fas fa-bell-slash fa-lg me-2"></i>
           You have no new notifications.
         </div>
-        {# ====== NEW: 即使无新通知，也提供入口查看历史 ====== #}
+        {# 即使无新通知，也提供入口查看历史 #}
         <a href="{{ url_for('notifications') }}" class="btn btn-outline-secondary">
           View Notifications
         </a>

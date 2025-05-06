@@ -26,13 +26,25 @@ topic_posters = sa.Table(
     sa.Column('topic_id', sa.Integer, sa.ForeignKey('topics.id'), primary_key=True),
 )
 
-# Association table for notification recipients
-notification_recipients = sa.Table(
-    'notification_recipients',
-    db.metadata,
-    sa.Column('notification_id', sa.Integer, sa.ForeignKey('notifications.id'), primary_key=True),
-    sa.Column('user_id', sa.Integer, sa.ForeignKey('users.id'), primary_key=True),
-)
+# Define the associated Notification model with a status field
+class NotificationRecipient(db.Model):
+    __tablename__ = 'notification_recipients'
+
+    notification_id: so.Mapped[int] = so.mapped_column(
+        sa.ForeignKey('notifications.id'), primary_key=True
+    )
+    user_id: so.Mapped[int] = so.mapped_column(
+        sa.ForeignKey('users.id'), primary_key=True
+    )
+    is_read: so.Mapped[bool] = so.mapped_column(sa.Boolean, default=False, nullable=False)
+
+    # Reverse relationship
+    notification: so.Mapped['Notification'] = so.relationship(
+        'Notification', back_populates='recipient_links'
+    )
+    user: so.Mapped['User'] = so.relationship(
+        'User', back_populates='recipient_links'
+    )
 
 @dataclass
 class User(UserMixin, db.Model):
@@ -66,11 +78,11 @@ class User(UserMixin, db.Model):
         cascade='all, delete-orphan',
     )
 
-    # Notifications this user has received
-    received_notifications: so.Mapped[List['Notification']] = so.relationship(
-        'Notification',
-        secondary=notification_recipients,
-        back_populates='recipients',
+    # Replace the original received_notifications with recipient_links as a direct many-to-many
+    recipient_links: so.Mapped[List[NotificationRecipient]] = so.relationship(
+        'NotificationRecipient',
+        back_populates='user',
+        cascade='all, delete-orphan',
     )
 
     def __repr__(self):
@@ -82,6 +94,29 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
+
+    @property
+    def received_notifications(self) -> List['Notification']:
+        """Return a list of all notification objects ordered by the time they were received."""
+        return sorted(
+            (link.notification for link in self.recipient_links),
+            key=lambda n: n.date,
+            reverse=True
+        )
+
+    @property
+    def unread_notifications(self) -> List['Notification']:
+        """Return a list of all unread notification objects."""
+        return sorted(
+            (link.notification for link in self.recipient_links if not link.is_read),
+            key=lambda n: n.date,
+            reverse=True
+        )
+
+    @property
+    def unread_count(self) -> int:
+        """Return the count of unread notifications."""
+        return sum(1 for link in self.recipient_links if not link.is_read)
 
 
 class Topic(db.Model):
@@ -142,10 +177,16 @@ class Topic(db.Model):
             date=datetime.now()
         )
         db.session.add(notif)
+        db.session.flush()  # Ensure notif.id has been generated
 
-        # Add each subscriber as a recipient of this notification
+        # Create a NotificationRecipient instance with is_read set to False
         for sub in self.subscribers:
-            notif.recipients.append(sub)
+            link = NotificationRecipient(
+                notification=notif,
+                user=sub,
+                is_read=False
+            )
+            db.session.add(link)
 
         db.session.commit()
         return notif
@@ -166,12 +207,19 @@ class Notification(db.Model):
     topic_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('topics.id'))
     topic: so.Mapped[Topic] = so.relationship('Topic', back_populates='notifications')
 
-    # Users who have received this notification
-    recipients: so.Mapped[List[User]] = so.relationship(
-        'User',
-        secondary=notification_recipients,
-        back_populates='received_notifications',
+    # Replace the original recipients relationship with recipient_links
+    recipient_links: so.Mapped[List[NotificationRecipient]] = so.relationship(
+        'NotificationRecipient',
+        back_populates='notification',
+        cascade='all, delete-orphan',
     )
+
+    # Retrieve the list of User objects directly
+    @property
+    def recipients(self) -> List['User']:
+        return [link.user for link in self.recipient_links]
+
+
 @login.user_loader
 def load_user(id):
     return db.session.get(User, int(id))

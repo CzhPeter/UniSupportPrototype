@@ -78,7 +78,7 @@ class TopicForm(FlaskForm):
     submit = SubmitField('Create Topic')
 
     def validate_name(form, field):
-        # 检查同名 topic 是否已存在
+        # Check if a topic with the same name already exists
         from app.models import Topic
         q = db.select(Topic).where(Topic.name == field.data)
         if db.session.scalar(q):

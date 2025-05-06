@@ -7,7 +7,7 @@ from flask import render_template, redirect, url_for, flash, request, send_file,
 from werkzeug.utils import secure_filename
 from app import app
 from app.docs_ingest import process_and_insert_into_store
-from app.models import User,AnswerRecord,Question, Topic, Notification
+from app.models import User,AnswerRecord,Question, Topic, Notification, NotificationRecipient
 from app.forms import ChooseForm, LoginForm, RegisterForm, UploadForm, ChangePasswordForm, RegisterForm
 from flask_login import current_user, login_user, logout_user, login_required, fresh_login_required
 import sqlalchemy as sa
@@ -317,9 +317,9 @@ from app.forms import TopicForm
 def social_system():
     form = TopicForm()
     if form.validate_on_submit():
-        # 如果提交合法，创建新 Topic 并刷新页面
+        # If the submission is valid, create a new Topic and refresh the page
         new_topic = Topic(name=form.name.data, description=form.description.data)
-        # 默认创建者也成为 posters（host）和订阅者
+        # By default, the creator also becomes a poster (host) and a subscriber
         new_topic.add_poster(current_user)
         new_topic.add_subscriber(current_user)
         db.session.add(new_topic)
@@ -328,10 +328,10 @@ def social_system():
         return redirect(url_for('social_system'))
 
     all_topics = Topic.query.all()
-    # 分离 host 和 非 host
+    # Separate hosts and non-hosts
     host_topics = [t for t in all_topics if t in current_user.posting_topics]
     other_topics = [t for t in all_topics if t not in current_user.posting_topics]
-    # 合并，使 host topics 在前
+    # Merge so that host topics appear first
     topics = host_topics + other_topics
     return render_template("socialSystem/social_system.html",topics = topics,form=form )
 
@@ -360,13 +360,13 @@ from app.forms import NotificationForm
 @login_required
 def topic_detail(topic_id):
     topic = Topic.query.get_or_404(topic_id)
-    # 判断当前用户是否为该 topic 的 Host
+    # Determine whether the current user is a Host for the given topic
     is_host = current_user in topic.posters
 
-    # 如果是 Host，则实例化发布通知的表单并处理提交
+    # If the user is a Host, instantiate the notification publishing form and handle its submission
     form = NotificationForm() if is_host else None
     if is_host and form.validate_on_submit():
-        # 通过models.py里的方法创建并分发通知
+        # Create and dispatch notifications using the method defined in models.py
         try:
             topic.post_notification(poster=current_user, content=form.content.data)
             flash('Notification posted to all subscribers.', 'success')
@@ -374,22 +374,35 @@ def topic_detail(topic_id):
             flash(str(e), 'danger')
         return redirect(url_for('topic_detail', topic_id=topic.id))
 
-    # 对所有用户都显示已有的 notifications（最新在前）
-    notifications = Notification.query.filter_by(topic_id=topic.id).order_by(Notification.date.desc()).all()
+    # Retrieve all NotificationRecipient links for the current user under the given topic, ordered by time in descending order
+    recips = (NotificationRecipient.query.join(Notification)
+              .filter(Notification.topic_id == topic.id, NotificationRecipient.user_id == current_user.id)
+              .order_by(Notification.date.desc()).all())
 
     return render_template(
         'socialSystem/topic_detail.html',
         topic=topic,
-        notifications=notifications,
         is_host=is_host,
-        form=form
+        form=form,
+        recips = recips
     )
+@app.route('/topic/<int:topic_id>/mark_read/<int:notification_id>', methods=['POST'])
+@login_required
+def mark_read(topic_id, notification_id):
+    link = NotificationRecipient.query.filter_by(
+        notification_id=notification_id,
+        user_id=current_user.id
+    ).first_or_404()
+    link.is_read = True
+    db.session.commit()
+    return redirect(url_for('topic_detail', topic_id=topic_id))
+
 
 @app.route('/topic/<int:topic_id>/delete', methods=['POST'])
 @login_required
 def delete_topic(topic_id):
     topic = Topic.query.get_or_404(topic_id)
-    # 仅允许 Host 删除
+    # Allow deletion only by Hosts
     if current_user not in topic.posters:
         flash('You do not have permission to delete this topic.', 'danger')
         return redirect(url_for('topic_detail', topic_id=topic_id))
@@ -399,12 +412,31 @@ def delete_topic(topic_id):
     flash(f'Topic "{topic.name}" has been deleted.', 'warning')
     return redirect(url_for('social_system'))
 
-
+from collections import defaultdict
 @app.route('/notifications')
 @login_required
 def notifications():
-    # 获取并展示 current_user.received_notifications
-    return render_template('socialSystem/notifications.html', notifications=current_user.received_notifications)
+    # Retrieve all NotificationRecipient records for the current user
+
+    recips = (NotificationRecipient.query
+              .join(NotificationRecipient.notification)
+              .filter(NotificationRecipient.user_id == current_user.id)
+              .order_by(Notification.date.desc())
+              .all())
+
+    # Group by topic
+    grouped: dict[Topic, list[NotificationRecipient]] = defaultdict(list)
+    for link in recips:
+        grouped[link.notification.topic].append(link)
+
+    # Within each group, sort first by is_read, then by date
+    for topic, links in grouped.items():
+        links.sort(key=lambda l: (l.is_read, -l.notification.date.timestamp()))
+
+    return render_template(
+        'socialSystem/notifications.html',
+        grouped_notifications=grouped
+    )
 
 
 
