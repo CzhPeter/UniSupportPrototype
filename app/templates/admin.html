@@ -31,11 +31,11 @@
                 <form action="{{ url_for('toggle_user_role') }}" method="post">
                     {{ form.csrf_token() }}
                     {{ form.choice(value=user.id) }}
-                    <button class="btn" type="submit">
+                    <button class="btn btn-sm btn-outline-secondary px-2 py-1" type="submit" title="Toggle Role">
                         {% if user.role == "Admin" %}
-                        <i class="bi bi-toggle-on"></i>
+                            <i class="bi bi-toggle-on text-success"></i>
                         {% else %}
-                        <i class="bi bi-toggle-off"></i>
+                            <i class="bi bi-toggle-off text-secondary"></i>
                         {% endif %}
                     </button>
                 </form>
