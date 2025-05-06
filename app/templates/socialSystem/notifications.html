@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}All Notifications{% endblock %}
+
+{% block content %}
+  <div class="container py-5">
+    <h1 class="mb-4">All Notifications</h1>
+
+    {% if not grouped_notifications %}
+      <p class="text-muted">You have no notifications.</p>
+    {% else %}
+      {% for topic, links in grouped_notifications.items() %}
+        <div class="mb-5">
+          <h2 class="h5 mb-3">
+            Topic: {{ topic.name }}
+            <a href="{{ url_for('topic_detail', topic_id=topic.id) }}"
+               class="btn btn-sm btn-link ms-2">View Topic</a>
+          </h2>
+          <ul class="list-group">
+            {% for link in links %}
+              {% set notif = link.notification %}
+              <li class="list-group-item d-flex justify-content-between align-items-start
+                         {% if not link.is_read %} list-group-item-warning {% endif %}">
+                <div class="me-3">
+                  <strong>{{ notif.poster.username }}</strong>
+                  <small class="text-muted">on {{ notif.date.strftime('%Y-%m-%d %H:%M') }}</small>
+                  <p class="mt-2 mb-0">{{ notif.content }}</p>
+                </div>
+                <div class="d-flex flex-column align-items-end">
+                  {% if not link.is_read %}
+                    <form method="post"
+                          action="{{ url_for('mark_read', topic_id=topic.id, notification_id=notif.id) }}">
+                      <button type="submit" class="btn btn-sm btn-primary mb-1">
+                        Mark as Read
+                      </button>
+                    </form>
+                  {% else %}
+                    <span class="badge bg-secondary mb-1">Read</span>
+                  {% endif %}
+                  <span class="badge bg-light text-dark small">
+                    {{ notif.date.strftime('%b %d') }}
+                  </span>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <a href="{{ url_for('social_system') }}" class="btn btn-link">&larr; Back to Topics</a>
+  </div>
+{% endblock %}

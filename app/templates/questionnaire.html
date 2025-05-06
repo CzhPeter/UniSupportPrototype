@@ -16,14 +16,14 @@
         <fieldset class="mb-4">
             <legend>{{ loop.index }}. {{ q.content }}</legend>
             <div class="btn-group d-flex" role="group">
-                <input type="radio" class="btn-check" name="q{{ loop.index0 }}" id="q{{ loop.index0 }}_1" value="1" required>
-                <label class="btn btn-outline-primary" for="q{{ loop.index0 }}_1">None/Seldom</label>
-                <input type="radio" class="btn-check" name="q{{ loop.index0 }}" id="q{{ loop.index0 }}_2" value="2">
-                <label class="btn btn-outline-primary" for="q{{ loop.index0 }}_2">Sometimes</label>
-                <input type="radio" class="btn-check" name="q{{ loop.index0 }}" id="q{{ loop.index0 }}_3" value="3">
-                <label class="btn btn-outline-primary" for="q{{ loop.index0 }}_3">Often</label>
-                <input type="radio" class="btn-check" name="q{{ loop.index0 }}" id="q{{ loop.index0 }}_4" value="4">
-                <label class="btn btn-outline-primary" for="q{{ loop.index0 }}_4">Always</label>
+                <input type="radio" class="btn-check" name="q{{ q.id }}" id="q{{ q.id }}_1" value="1" required>
+                <label class="btn btn-outline-primary" for="q{{ q.id }}_1">None/Seldom</label>
+                <input type="radio" class="btn-check" name="q{{ q.id }}" id="q{{ q.id }}_2" value="2">
+                <label class="btn btn-outline-primary" for="q{{ q.id }}_2">Sometimes</label>
+                <input type="radio" class="btn-check" name="q{{ q.id }}" id="q{{ q.id }}_3" value="3">
+                <label class="btn btn-outline-primary" for="q{{ q.id }}_3">Often</label>
+                <input type="radio" class="btn-check" name="q{{ q.id }}" id="q{{ q.id }}_4" value="4">
+                <label class="btn btn-outline-primary" for="q{{ q.id }}_4">Always</label>
             </div>
         </fieldset>
         {% endfor %}
