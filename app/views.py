@@ -12,6 +12,8 @@ from app.forms import ChooseForm, LoginForm, RegisterForm, UploadForm, ChangePas
 from flask_login import current_user, login_user, logout_user, login_required, fresh_login_required
 import sqlalchemy as sa
 from app import db
+from app.forms import NotificationForm
+from app.forms import TopicForm
 from urllib.parse import urlsplit
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
@@ -254,6 +256,7 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
+# Smart Learning System
 @app.route('/SmartLearningSystem')
 @login_required
 def smart_learning_system():
@@ -311,8 +314,8 @@ def chat():
             answer = llm([HumanMessage(content=final_prompt)]).content
     return render_template('chat.html', title='Smart Learning AI Chatbot', question=question, answer=answer)
 
-from app.forms import TopicForm
 
+# Social System
 @app.route("/SocialSystem",methods=['GET', 'POST'])
 def social_system():
     form = TopicForm()
@@ -335,6 +338,7 @@ def social_system():
     topics = host_topics + other_topics
     return render_template("socialSystem/social_system.html",topics = topics,form=form )
 
+
 @app.route('/subscribe/<int:topic_id>')
 @login_required
 def subscribe(topic_id):
@@ -343,6 +347,7 @@ def subscribe(topic_id):
     db.session.commit()
     flash(f'You have subscribed to "{topic.name}".', 'success')
     return redirect(url_for('social_system'))
+
 
 @app.route('/unsubscribe/<int:topic_id>')
 @login_required
@@ -354,7 +359,6 @@ def unsubscribe(topic_id):
         flash(f'Unsubscribed from "{topic.name}".', 'warning')
     return redirect(url_for('social_system'))
 
-from app.forms import NotificationForm
 
 @app.route('/topic/<int:topic_id>', methods=['GET', 'POST'])
 @login_required
@@ -386,6 +390,8 @@ def topic_detail(topic_id):
         form=form,
         recips = recips
     )
+
+
 @app.route('/topic/<int:topic_id>/mark_read/<int:notification_id>', methods=['POST'])
 @login_required
 def mark_read(topic_id, notification_id):
@@ -412,6 +418,7 @@ def delete_topic(topic_id):
     flash(f'Topic "{topic.name}" has been deleted.', 'warning')
     return redirect(url_for('social_system'))
 
+
 from collections import defaultdict
 @app.route('/notifications')
 @login_required
@@ -437,226 +444,6 @@ def notifications():
         'socialSystem/notifications.html',
         grouped_notifications=grouped
     )
-
-
-
-from flask import jsonify
-from app.debug_utils import reset_db
-@app.route("/test/reset")
-def test_reset():
-    """Reset & seed database."""
-    reset_db()
-    return "Database has been reset and seeded.", 200
-
-
-@app.route("/test/users")
-def test_users():
-    """List all users."""
-    return "<br>".join(repr(u) for u in User.query.all())
-
-
-@app.route("/test/topics")
-def test_topics():
-    """List all topics and their subscribers/posters."""
-    lines = []
-    for t in Topic.query.all():
-        subs    = [u.username for u in t.subscribers]
-        posters = [u.username for u in t.posters]
-        lines.append(f"{t.name} — subscribers: {subs}, posters: {posters}")
-    return "<br>".join(lines)
-
-
-@app.route("/test/subscribe")
-def test_subscribe():
-    """
-    Subscribe a user to a topic.
-    GET params: user=<username>&topic=<topicname>
-    """
-    username   = request.args.get('user')
-    topic_name = request.args.get('topic')
-    u = User.query.filter_by(username=username).first()
-    t = Topic.query.filter_by(name=topic_name).first()
-    if not u or not t:
-        return "User or Topic not found", 404
-
-    t.add_subscriber(u)
-    db.session.commit()
-    return f"{username} subscribed to {topic_name}", 200
-
-
-@app.route("/test/unsubscribe")
-def test_unsubscribe():
-    """
-    Unsubscribe a user from a topic.
-    GET params: user=<username>&topic=<topicname>
-    """
-    username   = request.args.get('user')
-    topic_name = request.args.get('topic')
-    u = User.query.filter_by(username=username).first()
-    t = Topic.query.filter_by(name=topic_name).first()
-    if not u or not t:
-        return "User or Topic not found", 404
-
-    t.remove_subscriber(u)
-    db.session.commit()
-    return f"{username} unsubscribed from {topic_name}", 200
-
-
-@app.route("/test/grant_post")
-def test_grant_post():
-    """
-    Grant a user posting rights on a topic.
-    GET params: user=<username>&topic=<topicname>
-    """
-    username   = request.args.get('user')
-    topic_name = request.args.get('topic')
-    u = User.query.filter_by(username=username).first()
-    t = Topic.query.filter_by(name=topic_name).first()
-    if not u or not t:
-        return "User or Topic not found", 404
-
-    t.add_poster(u)
-    db.session.commit()
-    return f"Granted posting rights on '{topic_name}' to {username}", 200
-
-
-@app.route("/test/revoke_post")
-def test_revoke_post():
-    """
-    Revoke a user's posting rights on a topic.
-    GET params: user=<username>&topic=<topicname>
-    """
-    username   = request.args.get('user')
-    topic_name = request.args.get('topic')
-    u = User.query.filter_by(username=username).first()
-    t = Topic.query.filter_by(name=topic_name).first()
-    if not u or not t:
-        return "User or Topic not found", 404
-
-    if u in t.posters:
-        t.posters.remove(u)
-        db.session.commit()
-        return f"Revoked posting rights on '{topic_name}' from {username}", 200
-    else:
-        return f"{username} had no posting rights on '{topic_name}'", 400
-
-
-@app.route("/test/post")
-def test_post():
-    """
-    Post a notification in a topic.
-    GET params: poster=<username>&topic=<topicname>&content=<text>
-    """
-    poster_name = request.args.get('poster')
-    topic_name  = request.args.get('topic')
-    content     = request.args.get('content', "Test notification")
-    u = User.query.filter_by(username=poster_name).first()
-    t = Topic.query.filter_by(name=topic_name).first()
-    if not u or not t:
-        return "Poster or Topic not found", 404
-    try:
-        notif = t.post_notification(u, content)
-    except PermissionError as e:
-        return str(e), 403
-    return (
-        f"Posted notification:<br>"
-        f"ID: {notif.id}<br>"
-        f"Topic: {notif.topic.name}<br>"
-        f"Content: {notif.content}<br>"
-        f"From: {notif.poster.username}<br>"
-        f"Date: {notif.date.isoformat()}"
-    ), 200
-
-
-@app.route("/test/notifications/<username>")
-def test_notifications(username):
-    """
-    List all notifications received by a user.
-    URL param: <username>
-    """
-
-    u = User.query.filter_by(username=username).first_or_404()
-    lines = [
-        f"{n.date.isoformat()} — {n.content} (from {n.poster.username})"
-        for n in u.received_notifications
-    ]
-    return "<br>".join(lines)
-
-
-@app.route("/test/posted/<username>")
-def test_posted(username):
-    """
-    List all notifications posted by a user.
-    URL param: <username>
-    """
-    u = User.query.filter_by(username=username).first()
-    if not u:
-        return "User not found", 404
-    lines = [
-        f"{n.date.isoformat()} — {n.content} (in topic {n.topic.name})"
-        for n in u.posted_notifications
-    ]
-    return "<br>".join(lines)
-
-
-@app.route("/test/delete_notification")
-def test_delete_notification():
-    """
-    Delete a notification by its ID.
-    GET params: id=<notification_id>
-    """
-    nid = request.args.get('id', type=int)
-    n = Notification.query.get(nid)
-    if not n:
-        return "Notification not found", 404
-    db.session.delete(n)
-    db.session.commit()
-    return f"Deleted notification {nid}", 200
-
-
-@app.route("/test/all")
-def test_all():
-    """Dump all data as JSON, now with users' received notifications."""
-    users = []
-    for u in User.query.all():
-        users.append({
-            'username': u.username,
-            'role':     u.role,
-            'subscriptions': sorted(t.name for t in u.subscriptions),
-            'posting_topics': sorted(t.name for t in u.posting_topics),
-            'received_notifications': [
-                {
-                    'id':      n.id,
-                    'content': n.content,
-                    'topic':   n.topic.name,
-                    'poster':  n.poster.username,
-                    'date':    n.date.isoformat()
-                }
-                for n in u.received_notifications
-            ]
-        })
-
-    topics = [{
-        'name':        t.name,
-        'description': t.description,
-        'subscribers': sorted(u.username for u in t.subscribers),
-        'posters':     sorted(u.username for u in t.posters),
-    } for t in Topic.query.all()]
-
-    notifications = [{
-        'id':         n.id,
-        'content':    n.content,
-        'topic':      n.topic.name,
-        'poster':     n.poster.username,
-        'recipients': sorted(u.username for u in n.recipients),
-        'date':       n.date.isoformat(),
-    } for n in Notification.query.all()]
-
-    return jsonify({
-        'users': users,
-        'topics': topics,
-        'notifications': notifications
-    })
 
 
 # Error handlers
