@@ -1,5 +1,5 @@
 from app import db
-from app.models import User,Question
+from app.models import User, Topic,Question
 
 def reset_db():
     db.drop_all()
@@ -53,3 +53,42 @@ def reset_db():
         db.session.add(q)
 
     db.session.commit()
+
+    # Added for testing: create some topics
+    topics_data = [
+        {'name': 'General', 'description': 'General discussion area'},
+        {'name': 'Announcements', 'description': 'Official announcements'}
+    ]
+    for t in topics_data:
+        topic = Topic(name=t['name'], description=t['description'])
+        db.session.add(topic)
+    db.session.commit()
+
+    # load objects into dicts for convenience
+    user_map = {u.username: u for u in User.query.all()}
+    topic_map = {t.name: t for t in Topic.query.all()}
+
+    # Added for testing: set up subscriptions
+    for user in user_map.values():
+        topic_map['General'].add_subscriber(user)
+    for user in user_map.values():
+        if user.role == 'Admin':
+            topic_map['Announcements'].add_subscriber(user)
+
+    # Added for testing: grant posting rights
+    for name in ('tom', 'jo', 'tariq'):
+        topic_map['General'].add_poster(user_map[name])
+    for name in ('amy', 'yin'):
+        topic_map['Announcements'].add_poster(user_map[name])
+
+    db.session.commit()
+
+    # Added for testing: create initial notifications
+    topic_map['General'].post_notification(
+        poster=user_map['tom'],
+        content="Welcome to the General discussion!"
+    )
+    topic_map['Announcements'].post_notification(
+        poster=user_map['amy'],
+        content="System is now live. Stay tuned for updates."
+    )
