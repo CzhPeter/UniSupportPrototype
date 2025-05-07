@@ -3,7 +3,7 @@ import random
 import csv
 import io
 
-from flask import render_template, redirect, url_for, flash, request, send_file, send_from_directory
+from flask import render_template, redirect, url_for, flash, request, abort, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 from app import app
 from app.docs_ingest import process_and_insert_into_store
@@ -271,6 +271,8 @@ def smart_learning_system():
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
+    if current_user.role != "Admin":
+        return abort(403)
     form = UploadForm()
     message = None
     if form.validate_on_submit():
