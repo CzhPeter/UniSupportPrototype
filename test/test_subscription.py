@@ -18,6 +18,7 @@ def test_subscribe_positive(logged_in_client, get_user):
     assert urlsplit(rv.headers["Location"]).path == "/SocialSystem"
     assert topic in user.subscriptions
 
+
 def test_subscribe_duplicate(logged_in_client, get_user):
     """
     Negative case: calling /subscribe/<id> again for a topic that is already subscribed to
@@ -33,12 +34,14 @@ def test_subscribe_duplicate(logged_in_client, get_user):
     updated_count = len(topic.subscribers)
     assert updated_count == initial_count
 
+
 def test_subscribe_invalid_topic(logged_in_client):
     """
     Negative case 2: After logging in, accessing a non-existent topic_id should return a 404.
     """
     rv = logged_in_client.get("/subscribe/99999", follow_redirects=False)
     assert rv.status_code == 404
+
 
 def count_subscriptions(topic_id: int) -> int:
     stmt = (

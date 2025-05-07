@@ -5,6 +5,7 @@ from app.debug_utils import reset_db
 from app.models import User
 from flask_login import login_user
 
+
 class TestConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
@@ -20,27 +21,31 @@ def app():
     yield _app
     ctx.pop()
 
+
 @pytest.fixture(autouse=True)
 def init_db(app):
     reset_db()
     yield
 
+
 @pytest.fixture
 def client(app):
     c = app.test_client(use_cookies=True)
-    # 立即登出一次，清除可能残留的任何 cookie
     c.get("/logout", follow_redirects=True)
     return c
+
 
 @pytest.fixture
 def runner(app):
     return app.test_cli_runner()
+
 
 @pytest.fixture
 def get_user():
     def _get(name):
         return User.query.filter_by(username=name).one()
     return _get
+
 
 @pytest.fixture
 def logged_in_client(app, get_user):

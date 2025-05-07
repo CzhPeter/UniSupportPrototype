@@ -10,6 +10,7 @@ def test_login_page_get(client):
     assert b'name="username"' in rv.data
     assert b'name="password"' in rv.data
 
+
 def test_login_invalid_credentials(client):
     """
     POST with incorrect username/password should redirect back to the login page and flash an error message
@@ -22,6 +23,7 @@ def test_login_invalid_credentials(client):
     assert rv.status_code == 200
     assert b"Invalid username or password" in rv.data
 
+
 def test_login_valid_credentials_redirect(client):
     """
     POST with correct username/password (tom / tom.pw) should return a 302 redirect to the homepage ('/')
@@ -32,9 +34,9 @@ def test_login_valid_credentials_redirect(client):
         follow_redirects=False
     )
     assert rv.status_code == 302
-    # 断言跳转到首页
     loc = rv.headers["Location"]
     assert urlsplit(loc).path == "/"
+
 
 def test_logout_requires_login_and_redirects(logged_in_client):
     """
