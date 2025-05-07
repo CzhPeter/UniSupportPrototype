@@ -343,9 +343,12 @@ def social_system():
 @login_required
 def subscribe(topic_id):
     topic = Topic.query.get_or_404(topic_id)
-    topic.add_subscriber(current_user)
-    db.session.commit()
-    flash(f'You have subscribed to "{topic.name}".', 'success')
+    if current_user not in topic.subscribers:
+        topic.add_subscriber(current_user)
+        db.session.commit()
+        flash(f'You have subscribed to "{topic.name}".', 'success')
+    else:
+        flash(f'You are already subscribed to "{topic.name}".', 'warning')
     return redirect(url_for('social_system'))
 
 
