@@ -317,6 +317,7 @@ def chat():
 
 # Social System
 @app.route("/SocialSystem",methods=['GET', 'POST'])
+@login_required
 def social_system():
     form = TopicForm()
     if form.validate_on_submit():
