@@ -33,6 +33,10 @@ Follow these steps to get the project up and running:
     Navigate to:  
     http://127.0.0.1:5000  
     Then enjoy using the system!
+- **Run Unit Test**
+    ```bash
+    pytest
+    ```
 
 ## Tools & Technologies
 - **Programming Language:** Python
