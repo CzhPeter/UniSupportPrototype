@@ -41,8 +41,7 @@ def test_questionnaire_unauthorized_access():
     Negative case: unauthenticated user should be redirected to login.
     """
     with app.test_client() as client:
-        # 确保未登录状态
-        client.get('/logout', follow_redirects=True)  # 确保用户已登出
+        client.get('/logout', follow_redirects=True)
         rv1 = client.get("/questionnaire1", follow_redirects=False)
         assert rv1.status_code == 302
         assert '/login' in rv1.headers['Location']
